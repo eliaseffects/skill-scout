@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-page: #0A0A0A;
+  --color-bg-elevated: #0F0F0F;
+  --color-bg-active: #1F1F1F;
+
+  --color-green-primary: #10B981;
+  --color-green-muted: #10B98120;
+  --color-amber-primary: #F59E0B;
+  --color-amber-muted: #F59E0B20;
+  --color-cyan-primary: #06B6D4;
+  --color-cyan-muted: #06B6D420;
+
+  --color-text-primary: #FAFAFA;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary: #4B5563;
+  --color-text-white: #FFFFFF;
+
+  --color-border-primary: #2a2a2a;
+
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+  --font-mono-body: "IBM Plex Mono", "JetBrains Mono", monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg-page);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--color-green-primary);
+    color: var(--color-bg-page);
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
