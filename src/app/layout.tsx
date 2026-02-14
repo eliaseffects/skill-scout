@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://skillscout.dev"),
+  metadataBase: new URL("https://skillscout.tech"),
   title: "skill_scout — discover skills you didn't know existed",
   description:
     "Search across 200+ skills in the skills.sh ecosystem. Find the right skill for any AI agent task, get the install command, ship it.",
