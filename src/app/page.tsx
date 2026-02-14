@@ -8,15 +8,21 @@ import { SkillCard } from "@/components/SkillCard";
 import { TerminalPreview } from "@/components/TerminalPreview";
 import { Footer } from "@/components/Footer";
 import { CATEGORIES } from "@/lib/categories";
-import { Category, Skill, SkillApiResponse } from "@/lib/types";
+import { PLATFORMS } from "@/lib/platforms";
+import { Category, Platform, Skill, SkillApiResponse } from "@/lib/types";
 
 const VALID_CATEGORIES = new Set<string>(
   CATEGORIES.map((category) => category.value)
+);
+const VALID_PLATFORMS = new Set<string>(
+  PLATFORMS.map((platform) => platform.value)
 );
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("all");
+  const [platform, setPlatform] = useState<Platform>("openclaw");
+  const [capabilityInput, setCapabilityInput] = useState("");
   const [results, setResults] = useState<readonly Skill[]>([]);
   const [totalSkills, setTotalSkills] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -33,9 +39,13 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q")?.trim();
     const cat = params.get("cat");
+    const platformParam = params.get("platform");
     if (q) setQuery(q);
     if (cat && VALID_CATEGORIES.has(cat)) {
       setCategory(cat as Category);
+    }
+    if (platformParam && VALID_PLATFORMS.has(platformParam)) {
+      setPlatform(platformParam as Platform);
     }
     setIsReady(true);
   }, []);
@@ -45,11 +55,12 @@ export default function Home() {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (category !== "all") params.set("cat", category);
+    if (platform !== "openclaw") params.set("platform", platform);
     const newUrl = params.toString()
       ? `${window.location.pathname}?${params.toString()}`
       : window.location.pathname;
     window.history.replaceState({}, "", newUrl);
-  }, [isReady, query, category]);
+  }, [isReady, query, category, platform]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -61,6 +72,7 @@ export default function Home() {
       category,
       limit: String(limit),
       view: "all-time",
+      platform,
     });
     if (trimmedQuery.length > 0) {
       params.set("q", trimmedQuery);
@@ -111,6 +123,32 @@ export default function Home() {
     return "live";
   }, [isLoading, sourceLabel]);
 
+  const canonicalCapabilities = [
+    "read pdf",
+    "text to speech",
+    "make calls",
+    "send email",
+    "browser automation",
+    "calendar",
+    "payments",
+    "crm",
+    "web scraping",
+    "image generation",
+  ];
+
+  const normalizedCapabilities = useMemo(() => {
+    return new Set(
+      capabilityInput
+        .split(",")
+        .map((entry) => entry.trim().toLowerCase())
+        .filter(Boolean)
+    );
+  }, [capabilityInput]);
+
+  const missingCapabilities = canonicalCapabilities.filter(
+    (capability) => !normalizedCapabilities.has(capability)
+  );
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -139,6 +177,38 @@ export default function Home() {
         <SearchBar query={query} onQueryChange={setQuery} />
       </section>
 
+      <section className="flex flex-col gap-6 px-16 py-10 border-t border-border-primary">
+        <div className="flex flex-col gap-2">
+          <span className="text-text-white text-sm font-mono">
+            {"//"} what you can already do
+          </span>
+          <span className="text-text-tertiary text-xs font-mono-body">
+            Enter your current capabilities (comma separated). We will surface
+            skills that fill the gaps.
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-3 max-w-[700px]">
+          <input
+            value={capabilityInput}
+            onChange={(event) => setCapabilityInput(event.target.value)}
+            placeholder="read pdf, send email, web scraping"
+            className="w-full bg-bg-elevated border border-border-primary text-text-primary text-sm font-mono px-4 py-3 outline-none focus:border-text-secondary"
+          />
+          <div className="flex flex-wrap gap-2">
+            {missingCapabilities.slice(0, 10).map((capability) => (
+              <button
+                key={capability}
+                onClick={() => setQuery(capability)}
+                className="text-text-secondary text-xs font-mono border border-border-primary px-3 py-1.5 hover:text-text-primary hover:border-text-secondary"
+              >
+                + {capability}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="flex flex-col gap-8 px-16 py-12">
         <div className="flex items-center justify-between">
           <span className="text-text-white text-sm font-mono">
@@ -153,6 +223,25 @@ export default function Home() {
           activeCategory={category}
           onCategoryChange={setCategory}
         />
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {PLATFORMS.map(({ value, label }) => {
+            const isActive = platform === value;
+            return (
+              <button
+                key={value}
+                onClick={() => setPlatform(value)}
+                className={`px-3.5 py-1.5 text-xs font-mono transition-colors whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? "bg-amber-primary text-bg-page font-medium"
+                    : "border border-border-primary text-text-secondary hover:text-text-primary hover:border-text-secondary"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
 
         {isLoading && results.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-20">

@@ -7,11 +7,14 @@ export interface Skill {
   readonly tags: readonly string[];
   readonly category: Category;
   readonly installCommand: string;
+  readonly openclawInstallCommand: string;
   readonly updatedAt: string;
   readonly source: string;
   readonly badge: "official" | "community" | "verified";
   readonly installs: number;
   readonly owner: string;
+  readonly platforms: readonly Platform[];
+  readonly successRate?: number;
 }
 
 export type Category =
@@ -28,6 +31,11 @@ export type Category =
   | "security"
   | "utilities";
 
+export type Platform =
+  | "all"
+  | "openclaw"
+  | "claude-code";
+
 export interface SearchState {
   readonly query: string;
   readonly category: Category;
@@ -41,6 +49,7 @@ export interface SkillApiResponse {
     readonly total: number;
     readonly query: string;
     readonly category: string;
+    readonly platform?: Platform;
     readonly format: "json" | "text";
     readonly view?: "all-time" | "trending" | "hot";
     readonly page?: number;

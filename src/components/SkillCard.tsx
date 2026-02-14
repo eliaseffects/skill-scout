@@ -28,6 +28,11 @@ const BADGE_STYLES = {
 
 export function SkillCard({ skill }: SkillCardProps) {
   const badge = BADGE_STYLES[skill.badge];
+  const isOpenclaw = skill.platforms.includes("openclaw");
+  const primaryCommand = isOpenclaw
+    ? skill.openclawInstallCommand
+    : skill.installCommand;
+  const primaryLabel = isOpenclaw ? "openclaw" : "npx";
 
   return (
     <div className="flex flex-col gap-4 p-6 bg-bg-elevated border border-border-primary hover:border-text-secondary/30 transition-colors animate-fade-in">
@@ -50,8 +55,13 @@ export function SkillCard({ skill }: SkillCardProps) {
         <span className="text-green-primary text-[11px] font-mono font-medium">
           {formatInstalls(skill.installs)} installs
         </span>
+        <span className="text-text-tertiary text-[11px] font-mono">
+          {typeof skill.successRate === "number"
+            ? `${Math.round(skill.successRate * 100)}% success`
+            : "success: unknown"}
+        </span>
         <div className="flex items-center gap-1.5">
-          {skill.tags.slice(0, 3).map((tag) => (
+          {skill.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
               className="text-text-tertiary text-[11px] font-mono border border-border-primary px-2 py-0.5"
@@ -59,14 +69,27 @@ export function SkillCard({ skill }: SkillCardProps) {
               {tag}
             </span>
           ))}
+          {skill.platforms.map((platform) => (
+            <span
+              key={platform}
+              className="text-text-tertiary text-[11px] font-mono border border-border-primary px-2 py-0.5"
+            >
+              {platform}
+            </span>
+          ))}
         </div>
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-text-tertiary text-[11px] font-mono">
-          {skill.source}
-        </span>
-        <CopyButton text={skill.installCommand} />
+        <div className="flex flex-col gap-1">
+          <span className="text-text-tertiary text-[11px] font-mono">
+            {skill.source}
+          </span>
+          <span className="text-text-tertiary text-[10px] font-mono">
+            {skill.installCommand}
+          </span>
+        </div>
+        <CopyButton text={primaryCommand} label={primaryLabel} />
       </div>
     </div>
   );

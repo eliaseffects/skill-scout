@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { inferCategory } from "@/lib/categories";
 import { getSkillCount, searchSkills } from "@/lib/search";
-import { Category, Skill, SkillApiResponse } from "@/lib/types";
+import { Category, Platform, Skill, SkillApiResponse } from "@/lib/types";
+import { inferPlatforms } from "@/lib/platforms";
 
 const SKILLS_API_BASE = "https://skills.sh";
 const VALID_VIEWS = ["all-time", "trending", "hot"] as const;
@@ -29,6 +30,7 @@ const VALID_CATEGORIES: readonly string[] = [
   "security",
   "utilities",
 ];
+const VALID_PLATFORMS: readonly Platform[] = ["all", "openclaw", "claude-code"];
 
 const UPSTREAM_TIMEOUT_MS = 7000;
 const UPSTREAM_RETRIES = 2;
@@ -100,6 +102,12 @@ function parseView(input: string): ViewMode {
     : "all-time";
 }
 
+function parsePlatform(input: string): Platform {
+  return VALID_PLATFORMS.includes(input as Platform)
+    ? (input as Platform)
+    : "openclaw";
+}
+
 function normalizeSourceUrl(source: string): string {
   if (source === "mintlify/com") return "https://mintlify.com";
   if (source === "huggingface/co") return "https://huggingface.co";
@@ -111,6 +119,24 @@ function splitTokens(input: string): string[] {
     .toLowerCase()
     .split(/[^a-z0-9.+-]+/g)
     .filter((token) => token.length > 1);
+}
+
+const INTENT_SYNONYMS: Record<string, readonly string[]> = {
+  "read pdf": ["pdf", "document", "ocr", "parse"],
+  "text to speech": ["tts", "voice", "audio", "speech"],
+  "make calls": ["telephony", "phone", "voice", "twilio"],
+  "send email": ["email", "smtp", "mailer"],
+  "web scrape": ["scrape", "crawler", "browser"],
+};
+
+function expandQuery(query: string): string {
+  const lowered = query.toLowerCase();
+  const extras = Object.entries(INTENT_SYNONYMS)
+    .filter(([intent]) => lowered.includes(intent))
+    .flatMap(([, terms]) => terms);
+
+  if (extras.length === 0) return query;
+  return `${query} ${extras.join(" ")}`;
 }
 
 function deriveTags(skillId: string, name: string, source: string): string[] {
@@ -128,6 +154,7 @@ function normalizeSkill(raw: UpstreamSkill): Skill {
     .map((part) => encodeURIComponent(part))
     .join("/");
   const category = inferCategory(name, owner, tags);
+  const platforms = inferPlatforms(name, source, tags);
   const isOfficial = OFFICIAL_OWNERS.has(owner);
   const isVerified = raw.installs >= 10000 || VERIFIED_OWNERS.has(owner);
 
@@ -140,17 +167,24 @@ function normalizeSkill(raw: UpstreamSkill): Skill {
     tags,
     category,
     installCommand: `npx skills add ${source} --skill ${skillId}`,
+    openclawInstallCommand: `openclaw skills add ${source}`,
     updatedAt: new Date().toISOString().slice(0, 10),
     source,
     badge: isOfficial ? "official" : isVerified ? "verified" : "community",
     installs: raw.installs,
     owner,
+    platforms,
   };
 }
 
 function filterByCategory(skills: readonly Skill[], category: Category): Skill[] {
   if (category === "all") return [...skills];
   return skills.filter((skill) => skill.category === category);
+}
+
+function filterByPlatform(skills: readonly Skill[], platform: Platform): Skill[] {
+  if (platform === "all") return [...skills];
+  return skills.filter((skill) => skill.platforms.includes(platform));
 }
 
 function sleep(ms: number): Promise<void> {
@@ -348,6 +382,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = request.nextUrl;
   const query = searchParams.get("q")?.trim() ?? "";
   const category = parseCategory(searchParams.get("category") ?? "all");
+  const platform = parsePlatform(searchParams.get("platform") ?? "openclaw");
   const format = searchParams.get("format") === "text" ? "text" : "json";
   const view = parseView(searchParams.get("view") ?? "all-time");
   const page = Math.max(parseInt(searchParams.get("page") ?? "0", 10) || 0, 0);
@@ -407,9 +442,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         category === "all"
           ? limit
           : Math.min(Math.max(limit * 6, 200), 1000);
-      const searchPayload = await fetchUpstreamSearch(query, upstreamLimit);
+      const expandedQuery = expandQuery(query);
+      const searchPayload = await fetchUpstreamSearch(
+        expandedQuery,
+        upstreamLimit
+      );
       const normalized = searchPayload.skills.map(normalizeSkill);
-      results = filterByCategory(normalized, category).slice(0, limit);
+      results = filterByPlatform(
+        filterByCategory(normalized, category),
+        platform
+      ).slice(0, limit);
       hasMore = searchPayload.skills.length >= upstreamLimit;
     } else {
       const maxPages = category === "all" ? 1 : 20;
@@ -428,7 +470,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         }
         upstreamHasMore = listPayload.hasMore;
         const normalized = listPayload.skills.map(normalizeSkill);
-        results.push(...filterByCategory(normalized, category));
+        results.push(
+          ...filterByPlatform(filterByCategory(normalized, category), platform)
+        );
         currentPage += 1;
         pagesFetched += 1;
       }
@@ -438,7 +482,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
   } catch (error) {
     source = "local-fallback";
-    results = searchSkills(query, category).slice(0, limit) as Skill[];
+    results = filterByPlatform(
+      searchSkills(query, category),
+      platform
+    ).slice(0, limit) as Skill[];
     sourceTotal = getSkillCount();
     hasMore = false;
     void emitFallbackAlert({
@@ -479,6 +526,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       total: results.length,
       query,
       category,
+      platform,
       format: "json",
       view,
       page,

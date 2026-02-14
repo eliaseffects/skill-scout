@@ -1,5 +1,6 @@
 import { Skill } from "../types";
 import { inferCategory } from "../categories";
+import { inferPlatforms } from "../platforms";
 
 function skill(
   name: string,
@@ -21,11 +22,13 @@ function skill(
     tags,
     category: inferCategory(name, owner, tags),
     installCommand: `npx skills add ${source}`,
+    openclawInstallCommand: `openclaw skills add ${source}`,
     updatedAt: "2026-02-13",
     source,
     badge: isOfficial ? "official" : isVerified ? "verified" : "community",
     installs,
     owner,
+    platforms: inferPlatforms(name, source, tags),
   };
 }
 

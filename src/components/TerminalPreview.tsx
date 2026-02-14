@@ -4,7 +4,7 @@ export function TerminalPreview() {
   return (
     <section className="flex flex-col items-center gap-8 w-full px-16 py-16 border-t border-border-primary">
       <span className="text-text-white text-sm font-mono">
-        {"//"} one command to install any skill
+        {"//"} openclaw install, zero guesswork
       </span>
 
       <div className="flex flex-col gap-3 w-[700px] max-w-full p-6 bg-bg-elevated border border-border-primary">
@@ -21,7 +21,7 @@ export function TerminalPreview() {
             $
           </span>
           <span className="text-text-primary text-sm font-mono">
-            npx skills add vercel-labs/agent-skills
+            openclaw skills add vercel-labs/agent-skills
           </span>
         </div>
 

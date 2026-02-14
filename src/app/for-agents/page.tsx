@@ -245,6 +245,11 @@ export default async function ForAgentsPage() {
                   desc: "filter by inferred category (see list below)",
                 },
                 {
+                  name: "platform",
+                  type: '"openclaw" | "claude-code" | "all"',
+                  desc: "filter by agent platform (default: openclaw)",
+                },
+                {
                   name: "view",
                   type: '"all-time" | "trending" | "hot"',
                   desc: "catalog view when q is empty (default: all-time)",
@@ -289,7 +294,7 @@ export default async function ForAgentsPage() {
             {[
               {
                 label: "find react skills",
-                cmd: "curl 'https://skillscout.dev/api/skills?q=react&category=frontend'",
+                cmd: "curl 'https://skillscout.dev/api/skills?q=react&category=frontend&platform=openclaw'",
               },
               {
                 label: "get plain text results",
@@ -350,15 +355,18 @@ export default async function ForAgentsPage() {
                       description: "what it does",
                       source: "owner/repo",
                       installCommand: "npx skills add owner/repo --skill skill-name",
+                      openclawInstallCommand: "openclaw skills add owner/repo",
                       installs: 10000,
                       category: "frontend",
                       tags: ["tag1", "tag2"],
+                      platforms: ["openclaw"],
                     },
                   ],
                   meta: {
                     total: 1,
                     query: "search term",
                     category: "all",
+                    platform: "openclaw",
                     format: "json",
                     view: "all-time",
                     page: 0,
