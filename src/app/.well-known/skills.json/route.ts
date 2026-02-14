@@ -5,11 +5,41 @@ export function GET(): NextResponse {
     {
       name: "skill_scout",
       description:
-        "Live discovery API for skills.sh, with search, category filtering, and install command generation.",
-      website: "https://skills.sh",
+        "Agent-first discovery API for live skills.sh search, category filtering, and deterministic install commands.",
+      website: "https://skillscout.dev",
       endpoints: {
         search: "/api/skills",
         docs: "/for-agents",
+        manifest: "/.well-known/skills.json",
+      },
+      install: {
+        requiresOwnerApproval: true,
+        commandTemplate: "npx skills add <owner/repo> --skill <skill-id>",
+      },
+      rateLimit: {
+        limit: 120,
+        windowSeconds: 60,
+        headers: true,
+      },
+      response: {
+        formats: ["json", "text"],
+        views: ["all-time", "trending", "hot"],
+        categories: [
+          "frontend",
+          "backend",
+          "design",
+          "testing",
+          "marketing",
+          "devops",
+          "mobile",
+          "ai-ml",
+          "docs",
+          "security",
+          "utilities",
+        ],
+      },
+      cache: {
+        publicSeconds: 300,
       },
       examples: [
         "/api/skills?q=react&limit=20",
