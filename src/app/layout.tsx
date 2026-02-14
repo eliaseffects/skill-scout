@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://skillscout.dev"),
   title: "skill_scout — discover skills you didn't know existed",
   description:
     "Search across 200+ skills in the skills.sh ecosystem. Find the right skill for any AI agent task, get the install command, ship it.",
@@ -11,6 +13,21 @@ export const metadata: Metadata = {
       "Discover 200+ skills for AI coding agents. Search, find, install.",
     type: "website",
     siteName: "Skill Scout",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "skill_scout",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "skill_scout",
+    description:
+      "Discover 200+ skills for AI coding agents. Search, find, install.",
+    images: ["/og.png"],
   },
   robots: {
     index: true,
@@ -58,7 +75,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
